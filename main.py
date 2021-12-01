@@ -57,7 +57,7 @@ def get_local_map_boundaries(agent_loc, local_sizes, full_sizes):
         if gy2 > full_h:
             gy1, gy2 = full_h - local_h, full_h
     else:
-        gx1.gx2, gy1, gy2 = 0, full_w, 0, full_h
+        gx1, gx2, gy1, gy2 = 0, full_w, 0, full_h
 
     return [gx1, gx2, gy1, gy2]
 
@@ -117,8 +117,6 @@ def main():
     # Starting environments
     torch.set_num_threads(1)
     for envs in gen_vec_envs(args):
-        print(envs)
-        input("Press Enter")
         obs, infos = envs.reset()
 
         # Initialize map variables

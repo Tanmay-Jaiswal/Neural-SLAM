@@ -53,9 +53,7 @@ def construct_envs_generator(args):
         config_env.defrost()
 
         if len(scenes) > 0:
-            config_env.DATASET.CONTENT_SCENES = scenes[
-                                                i * scene_split_size: (i + 1) * scene_split_size
-                                                ]
+            config_env.DATASET.CONTENT_SCENES = scenes[i:i+1]
 
         if i < args.num_processes_on_first_gpu:
             gpu_id = 0
@@ -101,7 +99,7 @@ def construct_envs_generator(args):
                 env_fn_args=tuple(
                     tuple(
                         zip(args_list, env_configs, baseline_configs,
-                            range(args.num_processes))
+                            range(len(args_list)))
                     )
                 ),
             )
@@ -111,5 +109,14 @@ def construct_envs_generator(args):
             args_list = []
             envs = None
     
-    if envs:
+    if args_list:
+        envs = VectorEnv(
+                make_env_fn=make_env_fn,
+                env_fn_args=tuple(
+                    tuple(
+                        zip(args_list, env_configs, baseline_configs,
+                            range(len(args_list)))
+                    )
+                ),
+            )
         yield envs
