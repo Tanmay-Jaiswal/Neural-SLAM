@@ -122,13 +122,11 @@ def main():
         obs, infos = envs.reset()
 
         # Initialize map variables
-        ### Exploration map consists of 4 channels containing the following:
+        ### Full map consists of 4 channels containing the following:
         ### 1. Obstacle Map
-        ### 2. Explored Area
-        # Agent global map
-        ### 1. Current Agent Location
-        ### 2. Past Agent Locations
-        ### 3. Other agent's current location 
+        ### 2. Exploread Area
+        ### 3. Current Agent Location
+        ### 4. Past Agent Location
 
         torch.set_grad_enabled(False)
 
@@ -139,56 +137,52 @@ def main():
                         int(full_h / args.global_downscaling)
 
         # Initializing full and local map
-        full_exploration_map = torch.zeros(num_scenes, 2, full_w, full_h).float().to(device)
-        full_agent_map = torch.zeros(num_scenes, num_agents, 3, full_w, full_h).float().to(device)
-        local_map = torch.zeros(num_scenes, num_agents, 5, local_w, local_h).float().to(device)
+        full_map = torch.zeros(num_scenes, 4, full_w, full_h).float().to(device)
+        local_map = torch.zeros(num_scenes, 4, local_w, local_h).float().to(device)
 
         # Initial full and local pose
-        full_pose = torch.zeros(num_scenes, num_agents, 3).float().to(device)
-        local_pose = torch.zeros(num_scenes, num_agents, 3).float().to(device)
+        full_pose = torch.zeros(num_scenes, 3).float().to(device)
+        local_pose = torch.zeros(num_scenes, 3).float().to(device)
 
         # Origin of local map
-        origins = np.zeros((num_scenes, num_agents, 3))
+        origins = np.zeros((num_scenes, 3))
 
         # Local Map Boundaries
-        lmb = np.zeros((num_scenes, num_agents, 4)).astype(int)
+        lmb = np.zeros((num_scenes, 4)).astype(int)
 
         ### Planner pose inputs has 7 dimensions
         ### 1-3 store continuous global agent location
         ### 4-7 store local map boundaries
-        planner_pose_inputs = np.zeros((num_scenes, num_agents, 7))
+        planner_pose_inputs = np.zeros((num_scenes, 7))
 
         def init_map_and_pose():
-            full_exploration_map.fill_(0.)
-            full_agent_map.fill_(0.)
+            full_map.fill_(0.)
             full_pose.fill_(0.)
             full_pose[:, :2] = args.map_size_cm / 100.0 / 2.0
 
             locs = full_pose.cpu().numpy()
             planner_pose_inputs[:, :3] = locs
             for e in range(num_scenes):
-                for a in range(num_agents):
-                    r, c = locs[e, a, 1], locs[e, a, 0]
-                    loc_r, loc_c = [int(r * 100.0 / args.map_resolution),
-                                    int(c * 100.0 / args.map_resolution)]
+                r, c = locs[e, 1], locs[e, 0]
+                loc_r, loc_c = [int(r * 100.0 / args.map_resolution),
+                                int(c * 100.0 / args.map_resolution)]
 
-                    full_agent_map[e, a, :2, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
-                    full_agent_map[e, :, 2, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
+                full_agent_map[e, :2, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
+                full_agent_map[e, :, 2, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
 
-                    lmb[e, a] = get_local_map_boundaries((loc_r, loc_c),
-                                                    (local_w, local_h),
-                                                    (full_w, full_h))
+                lmb[e] = get_local_map_boundaries((loc_r, loc_c),
+                                                (local_w, local_h),
+                                                (full_w, full_h))
 
-                    planner_pose_inputs[e, a, 3:] = lmb[e, a]
-                    origins[e] = [lmb[e, a][2] * args.map_resolution / 100.0,
-                                lmb[e, a][0] * args.map_resolution / 100.0, 0.]
+                planner_pose_inputs[e, 3:] = lmb[e]
+                origins[e] = [lmb[e][2] * args.map_resolution / 100.0,
+                            lmb[e][0] * args.map_resolution / 100.0, 0.]
 
             for e in range(num_scenes):
-                for a in range(num_agents):
-                    local_map[e, a, :2] = full_exploration_map[e, :, lmb[e, a, 0]:lmb[e, a, 1], lmb[e, a, 2]:lmb[e, a, 3]]
-                    local_map[e, a, 2:] = full_agent_map[e, a, :, lmb[e, a, 0]:lmb[e, a, 1], lmb[e, a, 2]:lmb[e, a, 3]]
-                    local_pose[e, a] = full_pose[e, a] - \
-                                    torch.from_numpy(origins[e, a]).to(device).float()
+                local_map[e, :2] = full_exploration_map[e, :, lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
+                local_map[e, 2:] = full_agent_map[e, :, lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
+                local_pose[e] = full_pose[e] - \
+                                torch.from_numpy(origins[e]).to(device).float()
 
         init_map_and_pose()
 
