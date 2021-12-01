@@ -1,12 +1,13 @@
 import torch
+import habitat
+from .habitat import construct_envs_generator
 
-from .habitat import construct_envs
 
-
-def make_vec_envs(args):
-    envs = construct_envs(args)
-    envs = VecPyTorch(envs, args.device)
-    return envs
+def gen_vec_envs(args):
+    envs_gen = construct_envs_generator(args)
+    for envs in envs_gen:
+        envs = VecPyTorch(envs, args.device)
+        yield envs
 
 
 # Adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail/blob/master/a2c_ppo_acktr/envs.py#L159

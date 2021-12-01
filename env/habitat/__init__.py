@@ -26,7 +26,8 @@ def make_env_fn(args, config_env, config_baseline, rank):
     return env
 
 
-def construct_envs(args):
+def construct_envs_generator(args):
+    envs = None
     env_configs = []
     baseline_configs = []
     args_list = []
@@ -46,7 +47,7 @@ def construct_envs(args):
         )
         scene_split_size = int(np.floor(len(scenes) / args.num_processes))
 
-    for i in range(args.num_processes):
+    for i in range(len(scenes)):
         config_env = cfg_env(config_paths=
                              ["env/habitat/habitat_api/configs/" + args.task_config])
         config_env.defrost()
@@ -94,14 +95,21 @@ def construct_envs(args):
 
         args_list.append(args)
 
-    envs = VectorEnv(
-        make_env_fn=make_env_fn,
-        env_fn_args=tuple(
-            tuple(
-                zip(args_list, env_configs, baseline_configs,
-                    range(args.num_processes))
+        if i!=0 and (i+1) % args.num_processes == 0:
+            envs = VectorEnv(
+                make_env_fn=make_env_fn,
+                env_fn_args=tuple(
+                    tuple(
+                        zip(args_list, env_configs, baseline_configs,
+                            range(args.num_processes))
+                    )
+                ),
             )
-        ),
-    )
-
-    return envs
+            yield envs
+            env_configs = []
+            baseline_configs = []
+            args_list = []
+            envs = None
+    
+    if envs:
+        yield envs

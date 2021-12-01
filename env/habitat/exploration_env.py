@@ -26,8 +26,8 @@ from env.utils.map_builder import MapBuilder
 from env.utils.fmm_planner import FMMPlanner
 
 from env.habitat.utils.noisy_actions import CustomActionSpaceConfiguration
-import env.habitat.utils.pose as pu
-import env.habitat.utils.visualizations as vu
+from env.habitat.utils import pose as pu
+from env.habitat.utils import visualizations as vu
 from env.habitat.utils.supervision import HabitatMaps
 
 from model import get_grid
