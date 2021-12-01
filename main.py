@@ -167,8 +167,7 @@ def main():
                 loc_r, loc_c = [int(r * 100.0 / args.map_resolution),
                                 int(c * 100.0 / args.map_resolution)]
 
-                full_agent_map[e, :2, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
-                full_agent_map[e, :, 2, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
+                full_map[e, 2:, loc_r - 1:loc_r + 2, loc_c - 1:loc_c + 2] = 1.0
 
                 lmb[e] = get_local_map_boundaries((loc_r, loc_c),
                                                 (local_w, local_h),
@@ -179,8 +178,7 @@ def main():
                             lmb[e][0] * args.map_resolution / 100.0, 0.]
 
             for e in range(num_scenes):
-                local_map[e, :2] = full_exploration_map[e, :, lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
-                local_map[e, 2:] = full_agent_map[e, :, lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
+                local_map[e] = full_map[e, :, lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
                 local_pose[e] = full_pose[e] - \
                                 torch.from_numpy(origins[e]).to(device).float()
 
