@@ -1,3 +1,11 @@
+import pathlib
+import sys
+import site
+site_path = pathlib.Path(site.getsitepackages()[0])
+cv2_libs_dir = site_path / 'cv2' / f'python-{sys.version_info.major}.{sys.version_info.minor}'
+cv2_libs = sorted(cv2_libs_dir.glob("*.so"))
+if len(cv2_libs) == 1:
+    sys.path.insert(1, str(cv2_libs[0].parent))
 import cv2
 import numpy as np
 import skfmm

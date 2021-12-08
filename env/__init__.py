@@ -22,7 +22,7 @@ class VecPyTorch():
 
     def reset(self):
         obs, info = self.venv.reset()
-        obs = torch.from_numpy(obs).float().to(self.device)
+        obs = torch.from_numpy(obs).float()
         return obs, info
 
     def step_async(self, actions):
@@ -31,14 +31,14 @@ class VecPyTorch():
 
     def step_wait(self):
         obs, reward, done, info = self.venv.step_wait()
-        obs = torch.from_numpy(obs).float().to(self.device)
+        obs = torch.from_numpy(obs).float()
         reward = torch.from_numpy(reward).float()
         return obs, reward, done, info
 
     def step(self, actions):
         actions = actions.cpu().numpy()
         obs, reward, done, info = self.venv.step(actions)
-        obs = torch.from_numpy(obs).float().to(self.device)
+        obs = torch.from_numpy(obs).float()
         reward = torch.from_numpy(reward).float()
         return obs, reward, done, info
 

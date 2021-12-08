@@ -109,14 +109,14 @@ def construct_envs_generator(args):
             args_list = []
             envs = None
     
-    if args_list:
-        envs = VectorEnv(
-                make_env_fn=make_env_fn,
-                env_fn_args=tuple(
-                    tuple(
-                        zip(args_list, env_configs, baseline_configs,
-                            range(len(args_list)))
-                    )
-                ),
-            )
-        yield envs
+    # if args_list:
+    #     envs = VectorEnv(
+    #             make_env_fn=make_env_fn,
+    #             env_fn_args=tuple(
+    #                 tuple(
+    #                     zip(args_list, env_configs, baseline_configs,
+    #                         range(len(args_list)))
+    #                 )
+    #             ),
+    #         )
+        # yield envs

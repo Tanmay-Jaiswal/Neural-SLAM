@@ -35,10 +35,12 @@ assert os.path.exists(source_dataset_path), "Invalid dataset path"
 
 with gzip.open(source_dataset_path, "rt") as f:
     deserialized = json.loads(f.read())
+print(deserialized)
 
 data = {}
 for episode in deserialized['episodes']:
     scene = episode['scene_id'].split("/")[-1].split(".")[0]
+    print(f"{scene}")
     if scene in data.keys():
         if len(data[scene]['episodes']) < args.num_episodes_per_scene or \
                 args.num_episodes_per_scene == 0:

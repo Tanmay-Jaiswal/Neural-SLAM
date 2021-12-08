@@ -158,7 +158,8 @@ class Neural_SLAM_Module(nn.Module):
             build_maps=True):
 
         # Get egocentric map prediction for the current obs
-        bs, c, h, w = obs.size()
+        _, c, h, w = obs.size()
+        bs = poses.shape[0]
         resnet_output = self.resnet_l5(obs[:, :3, :, :])
         conv_output = self.conv(resnet_output)
 
@@ -177,7 +178,8 @@ class Neural_SLAM_Module(nn.Module):
 
         with torch.no_grad():
             # Get egocentric map prediction for the last obs
-            bs, c, h, w = obs_last.size()
+            _, c, h, w = obs_last.size()
+            bs = poses.shape[0]
             resnet_output = self.resnet_l5(obs_last[:, :3, :, :])
             conv_output = self.conv(resnet_output)
 
@@ -212,8 +214,8 @@ class Neural_SLAM_Module(nn.Module):
 
             grid_map.fill_(0.)
             grid_map[:, :, vr:, int(vr / 2):int(vr / 2 + vr)] = pred_last
-            translated = F.grid_sample(grid_map, trans_mat)
-            rotated = F.grid_sample(translated, rot_mat)
+            translated = F.grid_sample(grid_map, trans_mat, align_corners=True)
+            rotated = F.grid_sample(translated, rot_mat, align_corners=True)
             rotated = rotated[:, :, vr:, int(vr / 2):int(vr / 2 + vr)]
 
             pred_last_st = rotated
@@ -288,8 +290,8 @@ class Neural_SLAM_Module(nn.Module):
                 rot_mat, trans_mat = get_grid(st_pose, agent_view.size(),
                                               self.device)
 
-                rotated = F.grid_sample(agent_view, rot_mat)
-                translated = F.grid_sample(rotated, trans_mat)
+                rotated = F.grid_sample(agent_view, rot_mat, align_corners=True)
+                translated = F.grid_sample(rotated, trans_mat, align_corners=True)
 
                 maps2 = torch.cat((maps.unsqueeze(1),
                                    translated[:, :1, :, :]), 1)

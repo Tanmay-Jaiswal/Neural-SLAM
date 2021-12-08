@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import nn
+from torch._C import dtype
 from torch.nn import functional as F
 
 
@@ -25,20 +26,22 @@ def get_grid(pose, grid_size, device):
     cos_t = t.cos()
     sin_t = t.sin()
 
+
     theta11 = torch.stack([cos_t, -sin_t,
-                           torch.zeros(cos_t.shape).float().to(device)], 1)
+                           torch.zeros(cos_t.shape, dtype=torch.float32, device=device)], 1)
     theta12 = torch.stack([sin_t, cos_t,
-                           torch.zeros(cos_t.shape).float().to(device)], 1)
+                           torch.zeros(cos_t.shape, dtype=torch.float32, device=device)], 1)
     theta1 = torch.stack([theta11, theta12], 1)
 
-    theta21 = torch.stack([torch.ones(x.shape).to(device),
-                           -torch.zeros(x.shape).to(device), x], 1)
-    theta22 = torch.stack([torch.zeros(x.shape).to(device),
-                           torch.ones(x.shape).to(device), y], 1)
+    theta21 = torch.stack([torch.ones(x.shape, device=device),
+                           -torch.zeros(x.shape, device=device), x], 1)
+    theta22 = torch.stack([torch.zeros(x.shape, device=device),
+                           torch.ones(x.shape, device=device), y], 1)
     theta2 = torch.stack([theta21, theta22], 1)
 
-    rot_grid = F.affine_grid(theta1, torch.Size(grid_size))
-    trans_grid = F.affine_grid(theta2, torch.Size(grid_size))
+
+    rot_grid = F.affine_grid(theta1, torch.Size(grid_size), align_corners=True).float()
+    trans_grid = F.affine_grid(theta2, torch.Size(grid_size), align_corners=True)
 
     return rot_grid, trans_grid
 

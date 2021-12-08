@@ -2,6 +2,7 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail/blob/master/a2c_ppo_acktr/storage.py
 
 from collections import namedtuple
+from multiprocessing import Pool
 
 import numpy as np
 import torch
@@ -15,7 +16,7 @@ def _flatten_helper(T, N, _tensor):
 class RolloutStorage(object):
 
     def __init__(self, num_steps, num_processes, obs_shape, action_space,
-                 rec_state_size):
+                 rec_state_size, device):
 
         if action_space.__class__.__name__ == 'Discrete':
             self.n_actions = 1
@@ -24,16 +25,16 @@ class RolloutStorage(object):
             self.n_actions = action_space.shape[0]
             action_type = torch.float32
 
-        self.obs = torch.zeros(num_steps + 1, num_processes, *obs_shape)
-        self.rec_states = torch.zeros(num_steps + 1, num_processes,
-                                      rec_state_size)
-        self.rewards = torch.zeros(num_steps, num_processes)
-        self.value_preds = torch.zeros(num_steps + 1, num_processes)
-        self.returns = torch.zeros(num_steps + 1, num_processes)
-        self.action_log_probs = torch.zeros(num_steps, num_processes)
+        self.obs = torch.zeros((num_steps + 1, num_processes, *obs_shape), device=device)
+        self.rec_states = torch.zeros((num_steps + 1, num_processes,
+                                      rec_state_size), device=device)
+        self.rewards = torch.zeros((num_steps, num_processes), device=device)
+        self.value_preds = torch.zeros((num_steps + 1, num_processes), device=device)
+        self.returns = torch.zeros((num_steps + 1, num_processes), device=device)
+        self.action_log_probs = torch.zeros((num_steps, num_processes), device=device)
         self.actions = torch.zeros((num_steps, num_processes, self.n_actions),
-                                   dtype=action_type)
-        self.masks = torch.ones(num_steps + 1, num_processes)
+                                   dtype=action_type, device=device)
+        self.masks = torch.ones((num_steps + 1, num_processes), device=device)
 
         self.num_steps = num_steps
         self.step = 0
@@ -183,11 +184,11 @@ class RolloutStorage(object):
 class GlobalRolloutStorage(RolloutStorage):
 
     def __init__(self, num_steps, num_processes, obs_shape, action_space,
-                 rec_state_size, extras_size):
+                 rec_state_size, extras_size, device):
         super(GlobalRolloutStorage, self).__init__(num_steps, num_processes,
-                                                   obs_shape, action_space, rec_state_size)
+                                                   obs_shape, action_space, rec_state_size, device)
         self.extras = torch.zeros((num_steps + 1, num_processes, extras_size),
-                                  dtype=torch.long)
+                                  dtype=torch.long, device=device)
         self.has_extras = True
         self.extras_size = extras_size
 
@@ -265,6 +266,21 @@ class FIFOMemory(object):
             count += 1
 
         return (inputs, outputs)
+
+    def sample_loader(self, batch_size, num_samples, num_processes, device=None):
+        with Pool(processes=num_processes) as pool:
+            # multiple_results caches the next num_processes results if sampled
+            multiple_results = [pool.apply_async(self.sample, (batch_size,)) 
+                                    for i in range(num_samples)]
+            for res in multiple_results:
+                if device is None:
+                    yield res.get()
+                else:                        
+                    inputs, outputs = res.get()
+                    inputs = [x.to(device) for x in inputs]
+                    outputs = [x.to(device) for x in outputs]
+                    yield (inputs, outputs)
+
 
     def __len__(self):
         return len(self.memory)
