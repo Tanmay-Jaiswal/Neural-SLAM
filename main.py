@@ -53,6 +53,20 @@ def get_local_map_boundaries(agent_loc, local_sizes, full_sizes, global_downscal
 
     return [gx1, gx2, gy1, gy2]
 
+def calc_rewards(current_explored_area, previously_explored_area):
+    """
+    current_explored_area: tensor of size[num_agents, <dimensions of explored area>]
+    previously_explored_area: tensor of size[<dimensions of explored area>]
+    """
+    new_explored_area = torch.zeros_like(current_explored_area)
+    for a_ix, a in enumerate(current_explored_area):
+        # a is the area explored by one of the agents that
+        z = ((torch.sum(current_explored_area) - a )> 0).int() 
+        new_explored_area[a_ix] = ( a - z - previously_explored_area) * a
+    rewards = new_explored_area.sum(dim=tuple(range(1,new_explored_area.dim()))) * 0.0005
+    return rewards
+
+
 
 def main():
     args = get_args()
@@ -117,7 +131,7 @@ def main():
     torch.multiprocessing.set_start_method('spawn')
     # Initialize map variables
     ### Full map consists of 4 channels containing the following:
-    ### 1. Obstacle Map
+    ### 1. Obstacle Mapl
     ### 2. Exploread Area
     ### 3. Current Agent Location
     ### 4. Past Agent Location
@@ -245,6 +259,7 @@ def main():
         
         for envs in gen_vec_envs(args):
             obs, infos = envs.reset()
+            previously_explored_area = torch.zeros(infos[0]['explorable_map'].shape, dtype=torch.int32 ,device=device)
             obs = obs.to(device)
 
             # Local policy
@@ -474,6 +489,12 @@ def main():
                     g_reward = torch.tensor(
                         [info['exp_reward'] for info in infos],
                         dtype=torch.float32,device=device)
+                    explored_area = torch.tensor(
+                        [info['explored_map'] for info in infos],
+                        dtype=torch.float32,device=device).unsqueeze(0)
+                    explorable_area = torch.tensor(infos[0]['explorable_area'], dtype=torch.float32,device=device)
+                    test_rewards = calc_rewards(explored_area * explorable_area, previously_explored_area=previously_explored_area)
+                    previously_explored_area = (torch.sum(explored_area) > 0).int()
 
                     if args.eval:
                         g_reward = g_reward*50.0 # Convert reward to area in m2
@@ -765,7 +786,4 @@ def main():
             
 
 if __name__ == "__main__":
-    yappi.start(builtins=True)
     main()
-    yappi.stop()
-    yappi.get_func_stats().save("profile4.pstat", type="pstat")

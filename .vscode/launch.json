@@ -10,10 +10,10 @@
             "request": "launch",
             "program": "/home/tj2467/exp_Neural-SLAM/main.py",
             "console": "integratedTerminal",
-            "args": ["--split", "val_mt", "--num_processes", "6", "--num_processes_per_gpu", "6", "--eval", "1", "--auto_gpu_config",
+            "args": ["--split", "val_mt", "--num_processes", "2", "--num_processes_per_gpu", "2", "--eval", "1", "--auto_gpu_config",
                     "0", "--num_episodes", "1", "--load_global", "pretrained_models/model_best.global", "--train_global", "0", 
                     "--load_local", "pretrained_models/model_best.local", "--train_local", "0", "--load_slam", 
-                    "pretrained_models/model_best.slam", "--train_slam", "0", "--max_episode_length", "20"]
+                    "pretrained_models/model_best.slam", "--train_slam", "0", "--max_episode_length", "100"]
             
             
         },

@@ -185,6 +185,8 @@ class Exploration_Env(habitat.RLEnv):
             'fp_explored': fp_explored,
             'sensor_pose': [0., 0., 0.],
             'pose_err': [0., 0., 0.],
+            'eplored_map': self.explored_map,
+            'explorable_map': self.explorable_map
         }
 
         self.save_position()
@@ -288,6 +290,8 @@ class Exploration_Env(habitat.RLEnv):
         self.info['pose_err'] = [dx_gt - dx_base,
                                  dy_gt - dy_base,
                                  do_gt - do_base]
+        self.info['explored_map'] = self.explored_map,
+        self.info['explorable_map'] = self.explorable_map
 
 
         if self.timestep%args.num_local_steps==0:

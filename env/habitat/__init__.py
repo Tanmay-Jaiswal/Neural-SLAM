@@ -86,12 +86,12 @@ def construct_envs_generator(args):
         config_env.DATASET.SPLIT = args.split
 
         config_env.freeze()
-        env_configs.append(config_env)
-
         config_baseline = cfg_baseline()
-        baseline_configs.append(config_baseline)
 
-        args_list.append(args)
+        for n in args.num_agents:
+            args_list.append(args)
+            baseline_configs.append(config_baseline)
+            env_configs.append(config_env)
 
         if i!=0 and (i+1) % args.num_processes == 0:
             envs = VectorEnv(
