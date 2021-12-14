@@ -93,7 +93,8 @@ def main():
     logging.info(args)
 
     # Logging and loss variables
-    num_scenes = args.num_processes
+    num_scenes = args.num_processes    ##########????????????
+    num_agents = args.num_processes
     num_episodes = int(args.num_episodes)
     device = args.device = torch.device("cuda:0" if args.cuda else "cpu")
     policy_loss = 0
@@ -109,7 +110,7 @@ def main():
     best_local_loss = np.inf
     best_g_reward = -np.inf
 
-    if args.eval:
+    if args.eval:                            ###################????????????
         traj_lengths = args.max_episode_length // args.num_local_steps
         explored_area_log = np.zeros((num_scenes, num_episodes, traj_lengths))
         explored_ratio_log = np.zeros((num_scenes, num_episodes, traj_lengths))
@@ -135,6 +136,7 @@ def main():
     ### 2. Exploread Area
     ### 3. Current Agent Location
     ### 4. Past Agent Location
+    ### 5. Other Agents Locations
 
     torch.set_grad_enabled(False)
 
@@ -145,24 +147,24 @@ def main():
                     int(full_h / args.global_downscaling)
 
     # Initializing full and local map
-    full_map = torch.zeros((num_scenes, 4, full_w, full_h), dtype=torch.float32, device=device)
-    local_map = torch.zeros((num_scenes, 4, local_w, local_h), dtype=torch.float32, device=device)
+    full_map = torch.zeros((num_scenes, 4, full_w, full_h), dtype=torch.float32, device=device)  ##############
+    local_map = torch.zeros((num_scenes, 4, local_w, local_h), dtype=torch.float32, device=device)    #############
 
     # Initial full and local pose
-    full_pose = torch.zeros((num_scenes, 3), dtype=torch.float32, device=device)
+    full_pose = torch.zeros((num_scenes, 3), dtype=torch.float32, device=device)  ###############
     local_pose = torch.zeros((num_scenes, 3), dtype=torch.float32, device=device)
     poses = torch.zeros((num_scenes, 3), dtype=torch.float32, device=device)
 
     # Origin of local map
-    origins = np.zeros((num_scenes, 3))
+    origins = np.zeros((num_scenes, 3))   ########?????????
 
     # Local Map Boundaries
-    lmb = np.zeros((num_scenes, 4)).astype(int)
+    lmb = np.zeros((num_scenes, 4)).astype(int)     ##########??????????
 
     ### Planner pose inputs has 7 dimensions
     ### 1-3 store continuous global agent location
     ### 4-7 store local map boundaries
-    planner_pose_inputs = np.zeros((num_scenes, 7))
+    planner_pose_inputs = np.zeros((num_scenes, 7))   ##########
 
     # Global policy observation space
     g_observation_space = gym.spaces.Box(0, 1,
@@ -189,7 +191,7 @@ def main():
     slam_optimizer = get_optimizer(nslam_module.parameters(),
                                 args.slam_optimizer)
 
-    # Global policy
+    # Global policy                 ##########????????
     g_policy = RL_Policy(g_observation_space.shape, g_action_space,
                         base_kwargs={'recurrent': args.use_recurrent_global,
                                     'hidden_size': g_hidden_size,
@@ -208,7 +210,7 @@ def main():
 
     slam_memory = FIFOMemory(args.slam_memory_size)
 
-    # Loading model
+    # Loading model   ###########
     if args.load_slam != "0":
         print("Loading slam {}".format(args.load_slam))
         state_dict = torch.load(args.load_slam,
@@ -230,10 +232,11 @@ def main():
     def init_map_and_pose():
         full_map.fill_(0.)
         full_pose.fill_(0.)
-        full_pose[:, :2] = args.map_size_cm / 100.0 / 2.0
+        full_pose[:, :2] = args.map_size_cm / 100.0 / 2.0  ###################
 
         locs = full_pose.cpu().numpy()
-        planner_pose_inputs[:, :3] = locs
+        planner_pose_inputs[:, :3] = locs  ##############
+          ####################
         for e in range(num_scenes):
             r, c = locs[e, 1], locs[e, 0]
             loc_r, loc_c = [int(r * 100.0 / args.map_resolution),
@@ -250,17 +253,18 @@ def main():
             origins[e] = [lmb[e][2] * args.map_resolution / 100.0,
                         lmb[e][0] * args.map_resolution / 100.0, 0.]
 
+        full_map[:,0] = torch.sum(full_map[:,0])
+        full_map[:,1] = torch.sum(full_map[:,1])
         for e in range(num_scenes):
             local_map[e] = full_map[e, :, lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
             local_pose[e] = full_pose[e] - \
                             torch.from_numpy(origins[e]).float().to(device)
 
     for ep_num in range(num_episodes):
-        
-        for envs in gen_vec_envs(args):
-            obs, infos = envs.reset()
-            previously_explored_area = torch.zeros(infos[0]['explorable_map'].shape, dtype=torch.int32 ,device=device)
-            obs = obs.to(device)
+        for envs in gen_vec_envs(args):   
+            obs, infos = envs.reset() #########??????????
+            previously_explored_area = torch.zeros(infos[0]['explorable_map'].shape, dtype=torch.int32 ,device=device)  ##########
+            obs = obs.to(device)   ###########
 
             # Local policy
             l_policy = Local_IL_Policy(l_observation_space.shape, envs.action_space.n,
@@ -286,7 +290,7 @@ def main():
             #     [info['sensor_pose'] for info in infos], 
             #     dtype=torch.float32, device=device)
 
-            for env_idx in range(len(infos)):
+            for env_idx in range(len(infos)):     ##############????????????????
                 poses[env_idx] = torch.tensor(infos[env_idx]['sensor_pose'], device=device)
 
             _, _, local_map[:, 0, :, :], local_map[:, 1, :, :], _, local_pose = \
@@ -295,7 +299,7 @@ def main():
 
             # Compute Global policy input
             locs = local_pose.cpu().numpy()
-            global_input = torch.zeros(num_scenes, 8, local_w, local_h)
+            global_input = torch.zeros(num_scenes, 8, local_w, local_h)   ##############
             global_orientation = torch.zeros(num_scenes, 1).long()
 
             for e in range(num_scenes):
@@ -458,6 +462,8 @@ def main():
                         origins[e] = [lmb[e][2] * args.map_resolution / 100.0,
                                     lmb[e][0] * args.map_resolution / 100.0, 0.]
 
+                    ############################# update
+                    for e in range(num_scenes):
                         local_map[e] = full_map[e, :,
                                     lmb[e, 0]:lmb[e, 1], lmb[e, 2]:lmb[e, 3]]
                         local_pose_cpu[e] = full_pose_cpu[e] - origins[e]
@@ -486,14 +492,17 @@ def main():
                         plt.gcf().canvas.flush_events()
 
                     # Get exploration reward and metrics
+                    
                     g_reward = torch.tensor(
                         [info['exp_reward'] for info in infos],
                         dtype=torch.float32,device=device)
+                    
                     explored_area = torch.tensor(
                         [info['explored_map'] for info in infos],
                         dtype=torch.float32,device=device).unsqueeze(0)
-                    explorable_area = torch.tensor(infos[0]['explorable_area'], dtype=torch.float32,device=device)
+                    explorable_area = torch.tensor(infos[0]['explorable_map'], dtype=torch.float32,device=device)
                     test_rewards = calc_rewards(explored_area * explorable_area, previously_explored_area=previously_explored_area)
+                    g_reward = test_rewards  ###############
                     previously_explored_area = (torch.sum(explored_area) > 0).int()
 
                     if args.eval:
@@ -567,7 +576,7 @@ def main():
                 if args.train_slam and len(slam_memory) > args.slam_batch_size:
                     for sample in slam_memory.sample_loader(batch_size=args.slam_batch_size, num_samples=args.slam_iterations, 
                                                                 num_processes=args.num_processes, device=device):
-                        print(total_num_steps)
+                        #print(total_num_steps)
                         inputs, outputs = sample
                         b_obs_last, b_obs, b_poses = inputs
                         gt_fp_projs, gt_fp_explored, gt_pose_err = outputs

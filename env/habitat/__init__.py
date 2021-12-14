@@ -37,15 +37,16 @@ def construct_envs_generator(args):
     basic_config.defrost()
     basic_config.DATASET.SPLIT = args.split
     basic_config.freeze()
+    num_agents = args.num_processes#########
 
     scenes = PointNavDatasetV1.get_scenes_to_load(basic_config.DATASET)
 
-    if len(scenes) > 0:
-        assert len(scenes) >= args.num_processes, (
-            "reduce the number of processes as there "
-            "aren't enough number of scenes"
-        )
-        scene_split_size = int(np.floor(len(scenes) / args.num_processes))
+    # if len(scenes) > 0:
+    #     assert len(scenes) >= args.num_processes, (
+    #         "reduce the number of processes as there "
+        #     "aren't enough number of scenes"
+        # )
+        # scene_split_size = int(np.floor(len(scenes) / args.num_processes))
 
     for i in range(len(scenes)):
         config_env = cfg_env(config_paths=
@@ -88,26 +89,27 @@ def construct_envs_generator(args):
         config_env.freeze()
         config_baseline = cfg_baseline()
 
-        for n in args.num_agents:
+
+        for n in range (0,num_agents):    ############
             args_list.append(args)
             baseline_configs.append(config_baseline)
             env_configs.append(config_env)
 
-        if i!=0 and (i+1) % args.num_processes == 0:
-            envs = VectorEnv(
-                make_env_fn=make_env_fn,
-                env_fn_args=tuple(
-                    tuple(
-                        zip(args_list, env_configs, baseline_configs,
-                            range(len(args_list)))
-                    )
-                ),
-            )
-            yield envs
-            env_configs = []
-            baseline_configs = []
-            args_list = []
-            envs = None
+        # if (len(env_configs)) % args.num_processes == 0:
+        envs = VectorEnv(
+            make_env_fn=make_env_fn,
+            env_fn_args=tuple(
+                tuple(
+                    zip(args_list, env_configs, baseline_configs,
+                        range(len(args_list)))
+                )
+            ),
+        )
+        yield envs
+        env_configs = []
+        baseline_configs = []
+        args_list = []
+        envs = None
     
     # if args_list:
     #     envs = VectorEnv(
