@@ -10,10 +10,11 @@
             "request": "launch",
             "program": "/home/tj2467/multi_agent_neural_slam/main.py",
             "console": "integratedTerminal",
-            "args": ["--split", "val_mt", "--num_processes", "2", "--num_processes_per_gpu", "2", "--eval", "1", "--auto_gpu_config",
-                    "0", "--num_episodes", "1", "--load_global", "pretrained_models/model_best.global", "--train_global", "0", 
+            "args": ["--split", "train_1_scene", "--num_processes", "3", "--num_processes_per_gpu", "3", "--eval", "1", "--auto_gpu_config",
+                    "0", "--num_episodes", "1", "--load_global", "pretrained_models/model_best.multi_global", "--train_global", "0", 
                     "--load_local", "pretrained_models/model_best.local", "--train_local", "0", "--load_slam", 
-                    "pretrained_models/model_best.slam", "--train_slam", "0", "--max_episode_length", "100"]
+                    "pretrained_models/model_best.slam", "--train_slam", "0", "--max_episode_length", "500",
+                     "--print_images", "1", "-d", "results/", "--exp_name", "exp1"]
             
             
         },
@@ -24,11 +25,14 @@
             "program": "/home/tj2467/multi_agent_neural_slam/main.py",
             "console": "integratedTerminal",
             "args": ["--split", "train_1_scene", "--num_processes", "3", "--num_processes_per_gpu", "3", "--eval", "0", "--auto_gpu_config",
-                    "0", "--num_episodes", "3", "--load_global", "pretrained_models/model_best.global", "--train_global", "1", 
+                    "0", "--num_episodes", "3", "--load_global", "pretrained_models/model_best.multi_global", "--train_global", "1", 
                     "--load_local", "pretrained_models/model_best.local", "--train_local", "1", "--train_slam", "1", 
-                    "--max_episode_length", "100"]
+                    "--max_episode_length", "200", "--print_images", "0", "-d", "results/", "--exp_name", "exp1", "--num_local_steps", "5"]
             
             
         }
     ]
 }
+
+
+// '--split train_1_scene --num_processes 3 --num_processes_per_gpu 3 --eval 0 --auto_gpu_config 0 --num_episodes 10 --load_global pretrained_models/model_best.multi_global --train_global 1 --load_local pretrained_models/model_best.local --train_local 1 --train_slam 1 --max_episode_length 100 --print_images 0 -d results/ --exp_name exp1'

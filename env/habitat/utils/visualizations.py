@@ -73,7 +73,7 @@ def visualize(fig, ax, img, grid, pos, gt_pos, dump_dir, rank, ep_no, t,
         plt.gcf().canvas.flush_events()
 
     if print_images:
-        fn = '{}/episodes/{}/{}/{}-{}-Vis-{}.png'.format(
+        fn = '{}/episodes/{}/{}/{}-{}-Vis-{}.jpg'.format(
             dump_dir, (rank + 1), ep_no, rank, ep_no, t)
         plt.savefig(fn)
 

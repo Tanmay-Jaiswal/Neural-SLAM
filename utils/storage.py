@@ -2,7 +2,7 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail/blob/master/a2c_ppo_acktr/storage.py
 
 from collections import namedtuple
-from multiprocessing import Pool
+# from multiprocessing import Pool
 
 import numpy as np
 import torch
@@ -267,19 +267,19 @@ class FIFOMemory(object):
 
         return (inputs, outputs)
 
-    def sample_loader(self, batch_size, num_samples, num_processes, device=None):
-        with Pool(processes=num_processes) as pool:
-            # multiple_results caches the next num_processes results if sampled
-            multiple_results = [pool.apply_async(self.sample, (batch_size,)) 
-                                    for i in range(num_samples)]
-            for res in multiple_results:
-                if device is None:
-                    yield res.get()
-                else:                        
-                    inputs, outputs = res.get()
-                    inputs = [x.to(device) for x in inputs]
-                    outputs = [x.to(device) for x in outputs]
-                    yield (inputs, outputs)
+    # def sample_loader(self, batch_size, num_samples, num_processes, device=None):
+    #     with Pool(processes=num_processes) as pool:
+    #         # multiple_results caches the next num_processes results if sampled
+    #         multiple_results = [pool.apply_async(self.sample, (batch_size,)) 
+    #                                 for i in range(num_samples)]
+    #         for res in multiple_results:
+    #             if device is None:
+    #                 yield res.get()
+    #             else:                        
+    #                 inputs, outputs = res.get()
+    #                 inputs = [x.to(device) for x in inputs]
+    #                 outputs = [x.to(device) for x in outputs]
+    #                 yield (inputs, outputs)
 
 
     def __len__(self):

@@ -185,7 +185,7 @@ class Exploration_Env(habitat.RLEnv):
             'fp_explored': fp_explored,
             'sensor_pose': [0., 0., 0.],
             'pose_err': [0., 0., 0.],
-            'eplored_map': self.explored_map,
+            'explored_map': self.explored_map,
             'explorable_map': self.explorable_map
         }
 
