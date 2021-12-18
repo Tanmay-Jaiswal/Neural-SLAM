@@ -634,8 +634,10 @@ class Exploration_Env(habitat.RLEnv):
 
         grid_map = torch.from_numpy(grid_map).float()
         grid_map = grid_map.unsqueeze(0).unsqueeze(0)
-        translated = F.grid_sample(grid_map, trans_mat, align_corners=True)
-        rotated = F.grid_sample(translated, rot_mat, align_corners=True)
+        # translated = F.grid_sample(grid_map, trans_mat, align_corners=True)
+        # rotated = F.grid_sample(translated, rot_mat, align_corners=True)
+        translated = F.grid_sample(grid_map, trans_mat)
+        rotated = F.grid_sample(translated, rot_mat)
 
         episode_map = torch.zeros((full_map_size, full_map_size)).float()
         if full_map_size > grid_size:
